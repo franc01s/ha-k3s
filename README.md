@@ -1,4 +1,4 @@
-# HOME ASSISTANT on Raspberry 5
+# HOME ASSISTANT on K3S
 
 #### .vimrc
 
