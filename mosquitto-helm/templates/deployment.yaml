@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mosquitto.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "mosquitto.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "mosquitto.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "mosquitto.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      initContainers:
+        - name: take-data-dir-ownership
+          image: alpine:3
+          command:
+            - sh
+            - -c
+            - |
+              cp /mosquitto/initial-password/password.txt /mosquitto/password/password.txt && \
+              chown 1883:1883 /mosquitto/password/password.txt && \
+              chmod 0700  /mosquitto/password/password.txt  
+          volumeMounts:
+            - name: mosquitto-initial-password
+              mountPath: /mosquitto/initial-password/password.txt
+              subPath: password.txt
+            - name: mosquitto-config
+              mountPath: /mosquitto/config
+            - name: mosquitto-password
+              mountPath: /mosquitto/password
+      containers:
+        - name: mosquitto
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 1883
+          volumeMounts:
+            - name: mosquitto-config
+              mountPath: /mosquitto/config
+            - name: mosquitto-password
+              mountPath: /mosquitto/password
+            - name: mosquitto-data
+              mountPath: /mosquitto/data
+      volumes:
+        - name: mosquitto-config
+          configMap:
+            name: {{ include "mosquitto.fullname" . }}-config
+        - name: mosquitto-initial-password
+          secret:
+            secretName: {{ include "mosquitto.fullname" . }}
+        - name: mosquitto-data
+          emptyDir: {}
+        - name: mosquitto-password
+          emptyDir: {}
+

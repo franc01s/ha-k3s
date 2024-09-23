@@ -1,0 +1,8 @@
+{{- define "mosquitto.name" -}}
+mosquitto
+{{- end }}
+
+{{- define "mosquitto.fullname" -}}
+{{ .Release.Name }}-mosquitto
+{{- end }}
+
